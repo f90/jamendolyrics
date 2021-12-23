@@ -6,6 +6,7 @@ import glob
 import os
 import csv
 import librosa
+from scipy.stats import skewnorm
 
 def mauch_correct(ref_timestamps, pred_timestamps, tolerance):
     # For given reference and prediction timestamps and a tolerance threshold, compute the metric defined in Mauch et al
@@ -46,6 +47,32 @@ def perc_metric(ref_dict, pred_dict, total_durations):
     # Percentage of correct segments (Perc) metric
     correct_percentages = [duration_correct(ref_dict[key], pred_dict[key], total_durations[key]) for key in ref_dict]
     return np.mean(correct_percentages)
+
+
+def perceptual_synchrony(offset):
+    """ function perceptually weighting the deviations of onsets
+    """
+    skewness = 1.12244251 
+    localisation = -0.22270315 
+    scale = 0.29779424
+    normalisation_factor = 1.6857
+    return (1./normalisation_factor)*skewnorm.pdf(offset, skewness, loc=localisation, scale=scale)
+
+
+def perceptual_metric(ref_dict, pred_dict):
+    """ metric based on human synchronicity perception as measured in the paper
+    
+    "User-centered evaluation of lyrics to audio alignment", N. Lizé-Masclef, A. Vaglio, M. Moussallam, ISMIR 2021 
+    
+    The parameters of this function were tuned on data collected through a user Karaoke-like experiment
+    It reflects human judgment of how "synchronous" lyrics and audio stimuli are perceived in that setup.
+
+    Beware that this metric is non-symmetrical, assuming the `ref_dict` argument is the ground truth for words actual position in the audio signal.
+    By construct, it is also not equal to 1 at 0.
+    """
+    perceptual_score = [perceptual_synchrony(pred_dict[key] -ref_dict[key]) for key in ref_dict]
+    return np.mean([np.mean(ppe) for ppe in perceptual_score])
+
 
 def read_predictions(cfg):
     label_paths = glob.glob(os.path.join(cfg.get("main", "LABEL_PATH"), "*" + cfg.get("main", "LABEL_EXT")))
@@ -133,6 +160,9 @@ def compute_metrics(config):
 
     results["mean_perc"] = (perc_metric(preds["ref_dict"], preds["pred_dict"], preds["total_durations"]),
                             "Perc: Mean proportion of correct annotation, averaged over songs")
+
+    results["mean_perceptual"] = (perceptual_metric(preds["ref_dict"], preds["pred_dict"]),
+                            "Perceptual: Perceptually weighted synchronicity score, averaged over songs")
 
     for tolerance in np.linspace(0.1, 1.0, 10):
         results["mauch_" + str(tolerance)] = (mauch_metric(preds["ref_dict"], preds["pred_dict"], tolerance),
