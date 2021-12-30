@@ -33,6 +33,7 @@ Lyrics alignment models can be evaluated with our Evaluate.py function according
   * Mean AE, standard deviation over songs
 * Percentage of correct segments (Perc) metric, averaged over songs
 * [Mauch metric](https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.310.799) (with different tolerance values)
+* [Perceptually weighted synchronicity score](https://zenodo.org/record/5625688) (thanks to Ninon Lizé Masclef and Manuel Moussallam for the implementation)
 
 ### Reproducing the paper results
 
