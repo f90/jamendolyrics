@@ -7,7 +7,9 @@ This repository is released alongside the paper
 It contains 
 
 * 20 music pieces under CC license from the Jamendo website along with their lyrics, with...
-  * Manual annotations indicating the start time of each word in the audio file
+  * Manual annotations indicating 
+    * the start time of each word in the audio file
+    * the end of each line in the audio file (thanks to @vic4code)
   * Predictions of start and end times for each word from both of the models presented in the [paper](https://arxiv.org/abs/1902.06797)
 * Code for evaluating lyrics alignment models using this database with multiple metrics
 * Code for visualising the overall model accuracy as well as accuracy for each song and word
@@ -16,7 +18,7 @@ These resources allow the evaluation of lyrics alignment (and lyrics transcripti
 
 ## Installation
 
-Requirements are Python 3 with packages installed as listed in ``requirements.txt.``
+Requirements are Python 3.10 with packages installed as listed in ``requirements.txt.``
 
 ## Evaluating lyrics alignment performance
 
@@ -63,6 +65,18 @@ print_results(results)
 
 under the line saying ``### ADD YOUR OWN MODEL HERE ###``, where ``YOUR_CONFIG_NAME`` is the name of your config file that is used to find your predictions.
 Then you can run ``Evaluate.py`` to get your model evaluation results, alongside the models from the paper.
+
+## Generating line-level annotation
+
+The line-level information is stored alongside the word start timestamps, by adding end timestamps 
+only to those words that mark the end of a line (see subfolder "annotations/words"). 
+The start timestamp for each line is then the start timestamp of the word after 
+an end-of-line word.
+
+To have more easy access to the line level lyrics and their start and end timings, you can 
+generate a CSV from this information with `(start_time, end_time, lyrics_line)` entries as rows 
+by running `generate_lines.py`.
+
 
 ## Visualising model predictions
 
