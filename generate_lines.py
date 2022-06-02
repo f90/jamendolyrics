@@ -20,7 +20,7 @@ for annotation_path in glob.glob(os.path.join("annotations/words", "*.csv")):
 
     out_path = os.path.join(out_dir, os.path.basename(annotation_path))
     with open(annotation_path) as f:
-        annotation = list(csv.reader(f))[1:]
+        annotation = list(csv.DictReader(f, delimiter=","))
     with open(
         os.path.join(
             "lyrics", os.path.basename(annotation_path).replace(".csv", ".words.txt")
@@ -31,23 +31,27 @@ for annotation_path in glob.glob(os.path.join("annotations/words", "*.csv")):
     with open(out_path, "w") as out_file:
         out_file.write("start_time,end_time,lyrics_line\n")
         curr_line = ""
-        curr_start = None
-        for word_idx, (word, row) in enumerate(zip(words, annotation)):
+        line_start = None
+        for word_idx, (word, time) in enumerate(zip(words, annotation)):
             curr_line += word + " "
-            if curr_start is None:
-                curr_start = float(row[0])
+            if line_start is None:
+                # Starting a new line - set line start to the start of the word
+                line_start = float(time["word_start"])
 
-            if not math.isnan(float(row[-1])):
-                # A line ends here - write it
-                curr_end = float(row[-1])
-                assert curr_end > curr_start, f"Invalid timestamp information!"
-                out_file.write(f"{str(curr_start)},{curr_end},{curr_line.strip()}\n")
+            if not math.isnan(float(time["line_end"])):
+                # A line ends here - write it, using the line_end column
+                line_end = float(time["line_end"])
+                assert line_end > line_start, (
+                    f"Found line in {annotation_path} with line end "
+                    f"{line_end} before line start {line_start}!"
+                )
+                out_file.write(f"{str(line_start)},{line_end},{curr_line.strip()}\n")
 
                 curr_line = ""
-                curr_start = None
+                line_start = None
 
         assert (
-            curr_start is None
+            line_start is None
         ), f"Last word in annotation did NOT end a lyrical line!"
 
 print("Line annotation successfully generated at 'annotations/lines/*.csv'!")
