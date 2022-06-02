@@ -34,17 +34,28 @@ for annotation_path in glob.glob(os.path.join("annotations/words", "*.csv")):
         line_start = None
         for word_idx, (word, time) in enumerate(zip(words, annotation)):
             curr_line += word + " "
+            word_start = float(time["word_start"])
             if line_start is None:
                 # Starting a new line - set line start to the start of the word
-                line_start = float(time["word_start"])
+                line_start = word_start
 
             if not math.isnan(float(time["line_end"])):
                 # A line ends here - write it, using the line_end column
                 line_end = float(time["line_end"])
+                if line_end < line_start:
+                    pass
+                # Check if line starts before it ends
                 assert line_end > line_start, (
                     f"Found line in {annotation_path} with line end "
                     f"{line_end} before line start {line_start}!"
                 )
+
+                # Check if last word starts before line ends
+                assert word_start < line_end, (
+                    f"Found line in {annotation_path} with last word start at {word_start} "
+                    f"before line end {line_end}"
+                )
+
                 out_file.write(f"{str(line_start)},{line_end},{curr_line.strip()}\n")
 
                 curr_line = ""
