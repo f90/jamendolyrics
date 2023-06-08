@@ -1,102 +1,78 @@
-# Jamendo lyrics database for lyrics alignment and transcription evaluation
+# JamendoLyrics MultiLang dataset for lyrics research
 
-This repository is released alongside the paper
+A dataset containing 80 songs with different genres and languages along with lyrics that 
+are time-aligned on a word-by-word level (with start and end times) to the music.
 
-[End-to-end Lyrics Alignment for Polyphonic Music Using an Audio-to-Character Recognition Model](https://arxiv.org/abs/1902.06797)
+To cite this dataset and for more information, please refer to the following paper, where this 
+dataset was first used:
 
-It contains 
-
-* 20 music pieces under CC license from the Jamendo website along with their lyrics, with...
-  * Manual annotations indicating 
-    * the start time of each word in the audio file
-    * the end of each line in the audio file (thanks to @vic4code)
-  * Predictions of start and end times for each word from both of the models presented in the [paper](https://arxiv.org/abs/1902.06797)
-* Code for evaluating lyrics alignment models using this database with multiple metrics
-* Code for visualising the overall model accuracy as well as accuracy for each song and word
-
-These resources allow the evaluation of lyrics alignment (and lyrics transcription) models on a dataset with diverse genres.
+[Similarity-based Audio-Lyrics Alignment of Multiple Languages
+](https://ieeexplore.ieee.org/document/10096725)
+\
+ICASSP 2023
+\
+Simon Durand, Daniel Stoller, Sebastian Ewert
 
 ## Installation
 
-Requirements are Python 3.10 with packages installed as listed in ``requirements.txt.``
+The dataset can be used without installation by cloning it from this Github repository. 
 
-## Evaluating lyrics alignment performance
+For running any of the included scripts, we require Python 3.10 with packages installed as 
+listed in ``requirements.txt.``
 
-Lyrics alignment models can be evaluated with our Evaluate.py function according to the following metrics:
+## Metadata CSV
 
-* For the deviation between correct and predicted start times:
-  * Mean
-  * Median
-* For the absolute errors (AE):
-  * Mean AE, averaged over songs (as used in [MIREX 2017](https://www.music-ir.org/mirex/wiki/2017:Automatic_Lyrics-to-Audio_Alignment))
-  * Mean AE, median over songs
-  * Median AE, averaged over songs
-  * Median AE, median over songs
-  * Mean AE, standard deviation over songs
-* Percentage of correct segments (Perc) metric, averaged over songs
-* [Mauch metric](https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.310.799) (with different tolerance values)
-* [Perceptually weighted synchronicity score](https://zenodo.org/record/5625688) (thanks to Ninon Lizé Masclef and Manuel Moussallam for the implementation)
+All songs are listed in `JamendoLyrics.csv` together with their metadata.
+To load annotations you are interested in, you can iterate over this CSV and use the `Filepath` 
+column to build file paths to files containing the data for each song (audio file, lyrics 
+annotations). Among the metadata, "LyricOverlap" refers to whether or not the lyrics in the song overlap,
+“Polyphonic” refers to whether or not there are multiple singers singing the same lyrics, but with different melodies,
+and "NonLexical" refers to whether or not there is non-lexical singing (eg: scatting).
 
-### Reproducing the paper results
+## Lyrics files
 
-To evaluate the models from the paper and reproduce the paper's results, simply run 
+In the `lyrics` subfolder, we provide the lyrics to each song as `SONG_NAME.txt` (normalized, e.
+g. special characters and characters not supported in `vocab/international.characters` are removed)
 
-```
-python Evaluate.py
-```
+Furthermore, `SONG_NAME.words.txt` contains all the words, separated by 
+lines, ignoring the paragraph structure of the original lyrics. This is used for the word-level timestamp annotations.
 
-and you will see a list of all performance metrics for both models.
+## Time-aligned lyrics annotations
 
-### Evaluating your own models
+We have aligned the lyrics on a word-by-word and line-by-line basis to the music.
 
-To evaluate your own model's predictions, save them as a separate folder in the subfolder predictions. The format needs to be the same as for the models from the paper (see these files for comparison). Specifically, we expect one CSV file for each song with the name ``<AUDIO_FILE_NAME>_align.csv``.
-Each row should correspond to one word of the lyrics, as given in the file ``<AUDIO_FILE_NAME>.words.txt`` in the ``lyrics`` subfolder, and should give the predicted start time and end time in seconds of that word, separated by a comma.
+Word-by-word start and end timestamps are stored in the "annotations/words" subfolder, and they 
+also indicate whether the word represents the end of a line as well (it will have the word end 
+timestamp set instead of NaN).
 
-Then, create a configuration file in the conf subfolder (again see the configuration files for our models for guidance on this).
-
-Finally, modify the ``main()`` function in ``Evaluate.py`` by adding
-
-```
-config = ConfigParser(inline_comment_prefixes=["#"])
-config.read("conf/YOUR_CONFIG_NAME.cfg")
-results = compute_metrics(config)
-print_results(results)
-```
-
-under the line saying ``### ADD YOUR OWN MODEL HERE ###``, where ``YOUR_CONFIG_NAME`` is the name of your config file that is used to find your predictions.
-Then you can run ``Evaluate.py`` to get your model evaluation results, alongside the models from the paper.
-
-## Line-level annotation
-
-The line level annotation is stored in the subfolder "annotations/lines" as CSV files.
-These contain one row per line in the form of `(start_time, end_time, lyrics_line)` and can be 
+A line-by-line version of the lyrics is stored in the subfolder
+"annotations/lines" as CSV files, denoting the start and end time of each lyrical line in the audio.
+These contain one row per line in the form of `(start_time, end_time, lyrics_line)` and can be
 used to train or evaluate models only on a line-by-line level.
 
-### Regenerating the line-level annotations
-Note that the line-level annotation in "annotations/lines" is auto-generated based on the manual 
-word-by-word annotations: Alongside the word start timestamps, end timestamps are also 
-available but only for those words that mark the end of a line (see subfolder "annotations/words"). 
-The start timestamp for each line is then the start timestamp of the word after an end-of-line word.
+### Modifying word-by-word timestamps
 
-The line-level CSV files included here were generated by running `generate_lines.py` - this can 
-be rerun in case word-level annotations change, to reflect these changes in the line-level 
-annotation.
+In case the word timestamps are modified, one needs to run `generate_lines.py` to 
+update the line-level timestamp files in "annotations/lines" accordingly. 
 
+This is because the line-level annotation in "annotations/lines" is auto-generated based on the manual
+word-by-word annotations: The start timestamp for each line is set to be the start timestamp of the 
+word after an end-of-line word.
 
-## Visualising model predictions
+In case you find errors in the timestamp annotations, we encourage you to submit a pull request 
+to this repository so we can correct the errors.
 
-``Plot.py`` contains some rudimentary plotting functionality to visualise the overall accuracy of models as well as what mistakes they make in each song at each point in time.
+## Acknowledgements
 
-The resulting plots for our model are contained in the subfolder ``plots``.
-``jamendo_histogram.png`` shows the histogram of errors for our model (blue) and source separated variant (orange).
-``jamendo_error_over_time.png`` shows the deviation of these models for each song at the beginning of each word. Negative values indicate a word has been predicted too early, positive that it's too late.
+We want to acknowledge our 2022 Research intern, [Emir Demirel](https://emirdemirel.github.io/), 
+and Torr Yatco for their help in assembling this dataset.
 
-To generate these plots for your own model, first integrate the predictions following the "Evaluating your own models" section above.
-Then, in ``Plot.py``, add the following code snippet to the ``plot_deviations`` function under the line ``### ADD YOUR OWN MODEL HERE ###``:
+## Original dataset
 
-    config = ConfigParser(inline_comment_prefixes=["#"])
-    config.read("conf/YOUR_CONFIG_NAME.cfg")
-    preds.append(read_predictions(config))
-    
-where ``YOUR_CONFIG_NAME`` is the name fo your configuration file. 
-Then run ``Plot.py``, and your model performance should then be visualised alongside the models from the paper, and saved in the plots subfolder.
+This dataset is an extended version of the original JamendoLyrics dataset presented in the paper
+
+[End-to-end Lyrics Alignment for Polyphonic Music Using an Audio-to-Character Recognition Model](https://arxiv.org/abs/1902.06797)
+
+It originally contained only 20 English songs and is now deprecated as annotations are slightly improved, 
+so we discourage its use in the future.
+You can find it archived [here](https://github.com/f90/jamendolyrics/releases/tag/original).
