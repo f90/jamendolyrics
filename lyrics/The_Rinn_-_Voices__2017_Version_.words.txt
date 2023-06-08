@@ -3,7 +3,8 @@ sun
 is
 fading
 under
-bloodred
+blood
+red
 sky
 the
 reign

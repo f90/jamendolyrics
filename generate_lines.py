@@ -1,68 +1,55 @@
-# This script generates line-level annotation in the form of CSVs (see example below) - based on
-# the line_end entry in the word annotations, it detects the endings of lines and their end
-# positions. Basically the information is only converted to a format that might be easier to read
-# for some purposes (e.g. line-level training/test data creation).
-
-# CSV structure:
-# (start_time, end_time, lyrics_line)
-# 0.5, 1.3, Hey you
-# 1.5, 1.8, I am listening
-# ...
+# Creates line annotations in annotations/lines/*.csv from word annotations in
+# annotations/words/*.csv.
 import csv
-import glob
 import os
-import math
 
-for annotation_path in glob.glob(os.path.join("annotations/words", "*.csv")):
-    out_dir = os.path.join("annotations", "lines")
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+import glob
 
-    out_path = os.path.join(out_dir, os.path.basename(annotation_path))
-    with open(annotation_path) as f:
-        annotation = list(csv.DictReader(f, delimiter=","))
-    with open(
-        os.path.join(
-            "lyrics", os.path.basename(annotation_path).replace(".csv", ".words.txt")
+for fp in glob.glob(os.path.join("annotations", "words", "*.csv")):
+    song_name = os.path.splitext(os.path.basename(fp))[0]
+
+    # Read word timings
+    with open(fp) as f:
+        word_timings = list(csv.DictReader(f, delimiter=","))
+
+    # Read word list
+    word_list_path = os.path.join("lyrics", song_name + ".words.txt")
+    if not os.path.exists(word_list_path):
+        raise FileNotFoundError(
+            f"Couldn't find word list file at {word_list_path}. Did you "
+            "forget to generate it beforehand?"
         )
-    ) as f:
+    with open(word_list_path) as f:
         words = f.read().splitlines()
 
-    with open(out_path, "w") as out_file:
+    # Create line-by-line annotations
+    assert len(word_timings) == len(
+        words
+    ), f"Found {len(word_timings)} timings in {fp} but {len(words)} words in {word_list_path}"
+    annotations_by_line = []
+    curr_line = {}
+    for timing, word in zip(word_timings, words):
+        # Potentially start new line
+        if "start_time" not in curr_line.keys():
+            assert len(curr_line.keys()) == 0
+            curr_line["start_time"] = timing["word_start"]
+        # Add current word to line text
+        curr_line["lyrics_line"] = (
+            word if "lyrics_line" not in curr_line.keys() else curr_line["lyrics_line"] + " " + word
+        )
+        # Potentially end current line
+        if timing["line_end"] != "nan":
+            curr_line["end_time"] = float(timing["line_end"])
+            annotations_by_line.append(curr_line)
+            curr_line = {}
+
+    # Write to line CSV
+    line_output_dir = os.path.join("annotations", "lines")
+    os.makedirs(line_output_dir, exist_ok=True)
+    line_output_path = os.path.join(line_output_dir, song_name + ".csv")
+    with open(line_output_path, "w") as out_file:
         out_file.write("start_time,end_time,lyrics_line\n")
-        curr_line = ""
-        line_start = None
-        for word_idx, (word, time) in enumerate(zip(words, annotation)):
-            curr_line += word + " "
-            word_start = float(time["word_start"])
-            if line_start is None:
-                # Starting a new line - set line start to the start of the word
-                line_start = word_start
+        for line in annotations_by_line:
+            out_file.write(f"{str(line['start_time'])},{line['end_time']},{line['lyrics_line']}\n")
 
-            if not math.isnan(float(time["line_end"])):
-                # A line ends here - write it, using the line_end column
-                line_end = float(time["line_end"])
-                if line_end < line_start:
-                    pass
-                # Check if line starts before it ends
-                assert line_end > line_start, (
-                    f"Found line in {annotation_path} with line end "
-                    f"{line_end} before line start {line_start}!"
-                )
-
-                # Check if last word starts before line ends
-                assert word_start < line_end, (
-                    f"Found line in {annotation_path} with last word start at {word_start} "
-                    f"before line end {line_end}"
-                )
-
-                out_file.write(f"{str(line_start)},{line_end},{curr_line.strip()}\n")
-
-                curr_line = ""
-                line_start = None
-
-        assert (
-            line_start is None
-        ), f"Last word in annotation did NOT end a lyrical line!"
-
-print("Line annotation successfully generated at 'annotations/lines/*.csv'!")
+print("Finished converting annotations!")
