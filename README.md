@@ -7,9 +7,9 @@ To cite this dataset and for more information, please refer to the following pap
 dataset was first used:
 
 [Similarity-based Audio-Lyrics Alignment of Multiple Languages
-](https://ieeexplore.ieee.org/document/10096725)
+](https://arxiv.org/abs/2306.07744)
 \
-ICASSP 2023
+[ICASSP 2023](https://ieeexplore.ieee.org/document/10096725)
 \
 Simon Durand, Daniel Stoller, Sebastian Ewert
 
