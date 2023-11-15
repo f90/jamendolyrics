@@ -1,0 +1,7 @@
+numpy
+matplotlib
+seaborn
+librosa
+configparser
+mir_eval
+unidecode

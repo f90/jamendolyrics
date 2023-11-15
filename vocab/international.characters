@@ -1,0 +1,55 @@
+# List of INTERNATIONAL alphabets (utf-8 encoded). Note that '#' starts a comment line, which
+# will be ignored by the parser.
+# use this vocabulary for the global set of characters
+# please add more supported characters for each target language to this vocabulary file
+# begin of vocabulary
+# IMPORTANT! The first character should be space.
+  
+a
+b
+c
+d
+e
+f
+g
+h
+i
+j
+k
+l
+m
+n
+o
+p
+q
+r
+s
+t
+u
+v
+w
+x
+y
+z
+'
+# Spanish extension
+ñ
+# German extension
+ö
+ä
+ü
+ß
+# French extension
+é
+ë
+è
+ê
+à
+â
+ù
+û
+ç
+ï
+î
+ô
+œ
