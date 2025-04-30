@@ -1,4 +1,9 @@
-# JamendoLyrics MultiLang dataset for lyrics research
+# DEPRECATED: JamendoLyrics MultiLang dataset for lyrics research
+
+DEPRECATED: This dataset has moved over to [Huggingface](https://huggingface.co/datasets/jamendolyrics/jamendolyrics) and is part of the [JamendoLyrics community on Huggingface](https://huggingface.co/jamendolyrics) - please use only the version on Huggingface, whill we keep receiving maintenance updates.
+The old dataset (as of 30th April 2025) is preserved here for posterity, but should no longer be used and will no longer be updated.
+
+## Introduction
 
 A dataset containing 80 songs with different genres and languages along with lyrics that 
 are time-aligned on a word-by-word level (with start and end times) to the music.
